@@ -1,0 +1,29 @@
+name:                aoc2019
+version:             0.0.0.1
+#synopsis:
+#description:
+homepage:            https://github.com/incertia/aoc-2019#readme
+license:             BSD3
+author:              incertia
+maintainer:          incertia@incertia.net
+copyright:           2019 incertia
+
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - data-has
+  - lens
+  - mtl
+  - split
+  - time
+  - unordered-containers
+
+ghc-options:
+  - -O2
+
+executables:
+  aoc:
+    source-dirs:      src
+    main:             Main.hs

@@ -1,0 +1,45 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 6f614798b4d68c2595c6090ea53b9f22a9c54a86becf5f7543a521e92a7acedc
+
+name:           aoc2019
+version:        0.1.0.0
+category:       Web
+homepage:       https://github.com/githubuser/aoc2019#readme
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2019 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+executable aoc
+  main-is: Main.hs
+  other-modules:
+      AOC001
+      AOC002
+      AOC003
+      AOC004
+      AOC005
+      AOC006
+      IntCode
+      Solver
+      Paths_aoc2019
+  hs-source-dirs:
+      src
+  ghc-options: -O2
+  build-depends:
+      base >=4.7 && <5
+    , data-has
+    , lens
+    , mtl
+    , split
+    , time
+    , unordered-containers
+  default-language: Haskell2010
