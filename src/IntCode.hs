@@ -3,31 +3,36 @@
 {-# LANGUAGE TemplateHaskell #-}
 module IntCode
   ( toTape, eval
-  , TapeMachine(TapeMachine)
+  , TapeMachine, initialMachine
   , tapePC, tapeIn, tapeOut, tape
   , readPure, readT, writeT
   ) where
 
-import Control.Lens (makeLenses, at, use, uses, over, _2, (^.), (.=), (%=), (?=))
+import Control.Lens (makeLenses, at, ix, use, preuse, uses, over, _2, (^.), (.=), (%=), (+=), (?=))
 import Control.Monad (when)
 import Control.Monad.State.Strict (MonadState)
 import Data.Has (Has, hasLens)
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Maybe (fromMaybe)
+import Data.Vector (Vector)
 
 data IntCode = OpAdd | OpMul | OpInput | OpOutput | OpJumpT | OpJumpF | OpLT | OpEQ | Halt
   deriving (Show, Eq)
 type Tape = HashMap Integer Integer
 
-data TapeMachine = TapeMachine { _tapePC :: Integer
-                               , _tapeIn :: [Integer]
-                               , _tapeOut :: [Integer]
-                               , _tape :: Tape }
+data TapeMachine = TapeMachine { _tapePC    :: Integer
+                               , _tapeIn    :: Vector Integer
+                               , _tapeInPos :: Int
+                               , _tapeOut   :: [Integer]
+                               , _tape      :: Tape }
   deriving (Show, Eq)
 makeLenses ''TapeMachine
 
 toTape :: String -> Tape
 toTape x = let y = read $ "[" ++ x ++ "]" in fromList $ zip [0..fromIntegral (length y)] y
+
+initialMachine :: Vector Integer -> Tape -> TapeMachine
+initialMachine i = TapeMachine 0 i 0 []
 
 decode :: (Has TapeMachine s, MonadState s m) => m (IntCode, [Integer], [Integer], Integer)
 decode = do
@@ -59,7 +64,11 @@ mode x n =
        z -> error $ "Unexpected mode: (" ++ show x ++ ", " ++ show n ++ ") -> " ++ show z
 
 input :: (Has TapeMachine s, MonadState s m) => m Integer
-input = uses (hasLens . tapeIn) head >>= \x -> hasLens . tapeIn %= tail >> pure x
+input = do
+  p <- use $ hasLens . tapeInPos
+  r <- preuse $ hasLens . tapeIn . ix p
+  hasLens . tapeInPos += 1
+  return $ fromMaybe (error $ "Ran out of input at position " ++ show p) r
 
 output :: (Has TapeMachine s, MonadState s m) => Integer -> m ()
 output = (hasLens . tapeOut %=) . (:)

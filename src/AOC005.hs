@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module AOC005
   ( solve005
   ) where
@@ -9,6 +11,6 @@ import IntCode
 
 solve005 :: String -> Bool -> Integer
 solve005 i b =
-  let r = view tapeOut . execState eval . TapeMachine 0 [z] [] $ toTape i
+  let r = view tapeOut . execState eval . initialMachine [z] $ toTape i
       z = if b then 5 else 1
   in  r !! (length r - 1)

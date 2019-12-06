@@ -21,6 +21,7 @@ dependencies:
   - split
   - time
   - unordered-containers
+  - vector
 
 ghc-options:
   - -O2
