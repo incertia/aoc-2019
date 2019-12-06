@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeApplications #-}
+
 module Solver (solve) where
 
 import Control.Exception (try)
@@ -20,11 +22,7 @@ solvers = H.fromList
 solve :: Integer -> Bool -> IO ()
 solve n b = case H.lookup n solvers of
   Nothing -> putStrLn "no solver implemented"
-  Just f  -> do
-    let ifile = "./input/" ++ pad 3 '0' (show n)
-    print =<< flip f b . readMaybeFile <$> try (readFile ifile)
-  where pad :: Int-> b -> [b] -> [b]
-        pad n x xs = if length xs < n then pad n x (x:xs) else xs
-        readMaybeFile :: Either IOError String -> String
-        readMaybeFile (Left _)  = ""
-        readMaybeFile (Right s) = s
+  Just f  ->
+    let ifile = "./input/" ++ pad 3 '0' (show n) in
+    print =<< flip f b . either (const "") id <$> try @IOError (readFile ifile)
+  where pad n x xs = if length xs < n then pad n x (x:xs) else xs
