@@ -1,4 +1,5 @@
 .stack-work/
 output/
+*.cabal
 .*.swp
 *.lock

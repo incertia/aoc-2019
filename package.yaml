@@ -13,7 +13,9 @@ extra-source-files:
 
 dependencies:
   - base >= 4.7 && < 5
+  - containers
   - data-has
+  - hashable
   - lens
   - mtl
   - split
