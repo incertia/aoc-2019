@@ -21,18 +21,20 @@ data IntCode = OpAdd | OpMul | OpInput | OpOutput | OpJumpT | OpJumpF | OpLT | O
 type Tape = HashMap Integer Integer
 
 data TapeMachine = TapeMachine { _tapePC    :: Integer
-                               , _tapeIn    :: Vector Integer
+                               , _tapeIn    :: [Integer]
                                , _tapeInPos :: Int
                                , _tapeOut   :: [Integer]
-                               , _tape      :: Tape }
+                               , _tape      :: Tape
+                               , _numInputs :: Int
+                               , _numInsns  :: Int }
   deriving (Show, Eq)
 makeLenses ''TapeMachine
 
 toTape :: String -> Tape
 toTape x = let y = read $ "[" ++ x ++ "]" in fromList $ zip [0..fromIntegral (length y)] y
 
-initialMachine :: Vector Integer -> Tape -> TapeMachine
-initialMachine i = TapeMachine 0 i 0 []
+initialMachine :: [Integer] -> Tape -> TapeMachine
+initialMachine i t = TapeMachine 0 i 0 [] t 0 0
 
 decode :: (Has TapeMachine s, MonadState s m) => m (IntCode, [Integer], [Integer], Integer)
 decode = do
@@ -68,6 +70,7 @@ input = do
   p <- use $ hasLens . tapeInPos
   r <- preuse $ hasLens . tapeIn . ix p
   hasLens . tapeInPos += 1
+  hasLens . numInputs += 1
   return $ fromMaybe (error $ "Ran out of input at position " ++ show p) r
 
 output :: (Has TapeMachine s, MonadState s m) => Integer -> m ()
@@ -85,8 +88,8 @@ writeT i x = hasLens . tape . at i ?= x
 eval :: (Has TapeMachine s, MonadState s m) => m ()
 eval = do
   (op, pa:_:pc:_, a:b:_, ip) <- decode
-  if op == Halt then
-     return ()
+  hasLens . numInsns += 1
+  if op == Halt then return ()
   else do
      case op of
           OpAdd   -> writeT pc $ a + b
