@@ -12,11 +12,12 @@ import AOC003 (solve003)
 import AOC004 (solve004)
 import AOC005 (solve005)
 import AOC006 (solve006)
+import AOC007 (solve007)
 
 solvers :: H.HashMap Integer (String -> Bool -> Integer)
 solvers = H.fromList
   [ (001, solve001), (002, solve002), (003, solve003), (004, solve004), (005, solve005)
-  , (006, solve006)
+  , (006, solve006), (007, solve007)
   ]
 
 solve :: Integer -> Bool -> IO ()
