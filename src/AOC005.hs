@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module AOC005
   ( solve005
   ) where
