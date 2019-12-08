@@ -97,6 +97,19 @@ We update `chain` to its current form and laziness takes care of everything. I
 managed to come up with this beautiful approach after a night of heavy drinking
 with my coworkers...
 
+## Day 8
+
+### Part A
+
+Standard list manipulation stuff, take the minimal layer by the metric and
+calculate the result.
+
+### Part B
+
+We now have to migrate to each solver spitting out `String` instead of
+`Integer`... We run the results of stacking the layers through a display
+function to make it easier for us to read.
+
 ## `IntCode`
 
 `eval` runs the machine by `decode`ing the current instruction and setting the
