@@ -1,5 +1,6 @@
 .stack-work/
 output/
+cbuild/
 *.cabal
 .*.swp
 *.lock
