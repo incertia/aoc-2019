@@ -26,4 +26,4 @@ solve n b = case H.lookup n solvers of
   Just f  ->
     let ifile = "./input/" ++ pad 3 '0' (show n) in
     print =<< flip f b . either (const "") id <$> try @IOError (readFile ifile)
-  where pad n x xs = if length xs < n then pad n x (x:xs) else xs
+  where pad l x xs = if length xs < l then pad l x (x:xs) else xs

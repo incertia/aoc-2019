@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeApplications #-}
+
 module Main (main) where
 
 import Data.Time.Clock.POSIX (getPOSIXTime)
@@ -10,7 +12,7 @@ timed io = do
   start <- getPOSIXTime
   io
   end <- getPOSIXTime
-  putStrLn $ "solution took " ++ show (round ((end - start) * 1000)) ++ "ms"
+  putStrLn $ "solution took " ++ show (round @_ @Integer ((end - start) * 1000)) ++ "ms"
 
 main :: IO ()
 main = do
