@@ -24,12 +24,12 @@ import qualified Data.HashMap.Strict as HM (fromList)
 data IntCode = OpAdd | OpMul | OpInput | OpOutput | OpJumpT | OpJumpF | OpLT | OpEQ | Halt
   deriving (Show, Eq)
 
-type Tape = HashMap Integer Integer
+type Tape = HashMap Int Int
 
-data TapeMachine = TapeMachine { _tapePC      :: Integer
-                               , _tapeIn      :: [Integer]
+data TapeMachine = TapeMachine { _tapePC      :: Int
+                               , _tapeIn      :: [Int]
                                , _tapeInPos   :: Int
-                               , _tapeOut     :: [Integer]
+                               , _tapeOut     :: [Int]
                                , _tape        :: Tape
                                }
   deriving (Show, Eq)
@@ -38,10 +38,10 @@ makeLenses ''TapeMachine
 toTape :: String -> Tape
 toTape x = let y = read $ "[" ++ x ++ "]" in HM.fromList $ zip [0..] y
 
-initialMachine :: [Integer] -> Tape -> TapeMachine
+initialMachine :: [Int] -> Tape -> TapeMachine
 initialMachine i = TapeMachine 0 i 0 []
 
-decode :: (Has TapeMachine s, MonadState s m) => m (IntCode, [Integer], [Integer], Integer)
+decode :: (Has TapeMachine s, MonadState s m) => m (IntCode, [Int], [Int], Int)
 decode = do
   i <- use (hasLens . tapePC)
   t <- use (hasLens . tape)
@@ -63,30 +63,30 @@ decode = do
       args  = zipWith (\m x -> if m then readPure x t else x) modes ptrs
   return (op, ptrs, args, ip)
 
-mode :: Integer -> Integer -> Bool
+mode :: Int -> Int -> Bool
 mode x n =
   case (x `div` 10^(n + 1)) `mod` 10 of
        0 -> True  -- Rel
        1 -> False -- Imm
        z -> error $ "Unexpected mode: (" ++ show x ++ ", " ++ show n ++ ") -> " ++ show z
 
---input :: (Has TapeMachine s, MonadState s m) => m Integer
+--input :: (Has TapeMachine s, MonadState s m) => m Int
 --input = do
 --  p <- use $ hasLens . tapeInPos
 --  r <- preuse $ hasLens . tapeIn . ix p
 --  hasLens . tapeInPos += 1
 --  return $ fromMaybe (error $ "Ran out of input at position " ++ show p) r
 
-output :: (Has TapeMachine s, MonadState s m) => Integer -> m ()
+output :: (Has TapeMachine s, MonadState s m) => Int -> m ()
 output = (hasLens . tapeOut %=) . (:)
 
-readPure :: Integer -> Tape -> Integer
+readPure :: Int -> Tape -> Int
 readPure i t = fromMaybe (error $ "Invalid tape index: " ++ show i) $ t ^. at i
 
-readT :: (Has TapeMachine s, MonadState s m) => Integer -> m Integer
+readT :: (Has TapeMachine s, MonadState s m) => Int -> m Int
 readT = uses (hasLens . tape) . readPure
 
-writeT :: (Has TapeMachine s, MonadState s m) => Integer -> Integer -> m ()
+writeT :: (Has TapeMachine s, MonadState s m) => Int -> Int -> m ()
 writeT i x = hasLens . tape . at i ?= x
 
 eval :: (Has TapeMachine s, MonadState s m) => m ()

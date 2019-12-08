@@ -13,5 +13,5 @@ solve002 i z = show $ let m = initialMachine [] $ toTape i in
     (\(a, b) -> 100 * a + b) . head . filter ((==19690720) . uncurry (doProblem m)) $ (,) <$> range <*> range
   else doProblem m 12 2
 
-doProblem :: TapeMachine -> Integer -> Integer -> Integer
+doProblem :: TapeMachine -> Int -> Int -> Int
 doProblem m a b = execState (writeT 1 a >> writeT 2 b >> eval) m ^?! tape . ix 0
