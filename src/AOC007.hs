@@ -3,16 +3,17 @@ module AOC007
   ) where
 
 import Control.Lens (view, (&), (.~))
-import Data.List (permutations)
 import Control.Monad.State (execState)
+import Data.Foldable (foldl')
+import Data.List (permutations, maximumBy)
 
 import IntCode (initialMachine, toTape, tapeIn, tapeOut, eval)
 
 solve007 :: String -> Bool -> String
 solve007 i b = show . maximum $ chain <$> perms
-  where chain p@(p1:p2:p3:p4:p5:_) =
+  where chain p =
           -- thanks /u/goliatskipson for making me realize that this
-          let r = foldr (\p rs -> view tapeOut . execState eval $ m & tapeIn .~ p:rs) (0:r) p
+          let r = foldl' (\rs p -> view tapeOut . execState eval $ m & tapeIn .~ p:rs) (0:r) p
           in  r !! (length r - 1)
           -- is equivalent to the following:
           -- let r1 = view tapeOut . execState eval $ m & tapeIn .~ p1:0:r5
