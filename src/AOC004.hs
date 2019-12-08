@@ -4,8 +4,8 @@ module AOC004
 
 import Data.List (group, sort)
 
-solve004 :: String -> Bool -> Integer
-solve004 i z =
+solve004 :: String -> Bool -> String
+solve004 i z = show $
   let (a, b) = split i
       x = read a :: Integer
       y = read b

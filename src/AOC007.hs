@@ -8,8 +8,8 @@ import Control.Monad.State (execState)
 
 import IntCode (initialMachine, toTape, tapeIn, tapeOut, eval)
 
-solve007 :: String -> Bool -> Integer
-solve007 i b = maximum $ chain <$> perms
+solve007 :: String -> Bool -> String
+solve007 i b = show . maximum $ chain <$> perms
   where chain (p1:p2:p3:p4:p5:_) =
           let r1 = view tapeOut . execState eval $ m & tapeIn .~ p1:0:r5
               r2 = view tapeOut . execState eval $ m & tapeIn .~ p2:r1

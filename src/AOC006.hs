@@ -15,8 +15,8 @@ import qualified Data.HashSet as HS
 
 type Graph a b = HM.HashMap a (HS.HashSet b)
 
-solve006 :: String -> Bool -> Integer
-solve006 i b =
+solve006 :: String -> Bool -> String
+solve006 i b = show $
   let o = orbits <$> lines i
       ot = unfoldTree (\x -> (x,) $ snd <$> filter ((==x) . fst) o) "COM"
       g = HM.fromList . HS.toList . HS.map (\v -> (v, matches v o))

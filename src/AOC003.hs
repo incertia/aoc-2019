@@ -33,8 +33,8 @@ dist (V (x, y) l : s) p@(x', y') = if x == x' && inrange y' y (y + l) then abs (
 inrange :: Integer -> Integer -> Integer -> Bool
 inrange x a b = x >= min a b && x <= max a b
 
-solve003 :: String -> Bool -> Integer
-solve003 i z =
+solve003 :: String -> Bool -> String
+solve003 i z = show $
   let [l1, l2] = lines i
       a = mkSegs (0, 0) $ read $ "[" ++ l1 ++ "]"
       b = mkSegs (0, 0) $ read $ "[" ++ l2 ++ "]"
