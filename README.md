@@ -1,6 +1,8 @@
 # Advent of Code 2019
 
-This holds my AOC 2019 code, with some comments left in this document.
+This holds my AOC 2019 code, with some Haskell-related comments left in this
+document. I will also be publishing a set of solutions in C, and one can compare
+the difference in code required between the two languages.
 
 ## Day 1
 
