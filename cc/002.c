@@ -48,6 +48,8 @@ solve(int z)
     {
       for (int b = 0; b < 100 && !found; b++)
       {
+        // without using the copy constructor, rebuilting the avl from p tree
+        // takes our runtime up to 2s
         intcode_t *mm = intcode_cpy(m);
         intcode_mem_set(mm, 1, a);
         intcode_mem_set(mm, 2, b);
