@@ -19,6 +19,21 @@ vec_new()
   return v;
 }
 
+vec_t *
+vec_cpy(vec_t *v)
+{
+  if (!v) return NULL;
+  vec_t *cpy = malloc(sizeof(vec_t));
+  cpy->sz = v->sz;
+  cpy->cap = v->sz;
+  cpy->v = malloc(cpy->cap * sizeof(int64_t));
+  for (size_t i = 0; i < cpy->sz; i++)
+  {
+    cpy->v[i] = v->v[i];
+  }
+  return cpy;
+}
+
 size_t
 vec_size(vec_t *v)
 {
@@ -59,15 +74,27 @@ vec_free(vec_t *v)
 typedef struct node_t
 {
   int64_t k, v;
-  struct node_t *l, *r, *p;
+  struct node_t *l, *r;
 } node_t;
 
 node_t *
 node_new()
 {
   node_t *node = malloc(sizeof(node_t));
-  node->p = node->l = node->r = NULL;
+  node->l = node->r = NULL;
   return node;
+}
+
+node_t *
+node_cpy(node_t *node)
+{
+  if (!node) return NULL;
+  node_t *cpy = malloc(sizeof(node_t));
+  cpy->l = cpy->r = NULL;
+  cpy->k = node->k; cpy->v = node->v;
+  cpy->l = node_cpy(node->l);
+  cpy->r = node_cpy(node->r);
+  return cpy;
 }
 
 int
@@ -100,24 +127,17 @@ node_rebalance(node_t *x)
     zb = node_height(z->l) - node_height(z->r);
     if (zb == 0 || zb == -1)
     {
-      z->p = x->p;
-      x->p = z;
       x->r = z->l;
       z->l = x;
-      if (x->r) x->r->p = x;
 
       return z;
     }
     else if (zb == 1)
     {
       node_t *y = z->l;
-      y->p = x->p;
-      x->p = z->p = y;
       x->r = y->l;
       z->l = y->r;
       y->l = x; y->r = z;
-      if (x->r) x->r->p = x;
-      if (z->l) z->l->p = z;
 
       return y;
     }
@@ -134,24 +154,17 @@ node_rebalance(node_t *x)
     zb = node_height(z->l) - node_height(z->r);
     if (zb == 0 || zb == 1)
     {
-      z->p = x->p;
-      x->p = z;
       x->l = z->r;
       z->r = x;
-      if (x->l) x->l->p = x;
 
       return z;
     }
     else if (zb == -1)
     {
       node_t *y = z->r;
-      y->p = x->p;
-      x->p = z->p = y;
       x->l = y->r;
       z->r = y->l;
       y->r = x; y->l = z;
-      if (x->l) x->l->p = x;
-      if (z->r) z->r->p = z;
 
       return y;
     }
@@ -176,7 +189,7 @@ node_rebalance(node_t *x)
 }
 
 int
-node_insert(node_t **pn, node_t *p, int64_t k, int64_t v)
+node_insert(node_t **pn, int64_t k, int64_t v)
 {
   node_t *n;
   if (*pn)
@@ -189,18 +202,17 @@ node_insert(node_t **pn, node_t *p, int64_t k, int64_t v)
     }
     else if (k < n->k)
     {
-      return node_insert(&n->l, n, k, v);
+      return node_insert(&n->l, k, v);
     }
     else
     {
-      return node_insert(&n->r, n, k, v);
+      return node_insert(&n->r, k, v);
     }
   }
   else
   {
     n = *pn = node_new();
     n->k = k; n->v = v;
-    n->p = p;
     return 1;
   }
 }
@@ -246,10 +258,19 @@ bt_new()
   return bt;
 }
 
+bt_t *
+bt_cpy(bt_t *bt)
+{
+  if (!bt) return NULL;
+  bt_t *cpy = malloc(sizeof(bt_t));
+  cpy->r = node_cpy(bt->r);
+  return cpy;
+}
+
 void
 bt_insert(bt_t *bt, int64_t k, int64_t v)
 {
-  if (node_insert(&bt->r, NULL, k, v))
+  if (node_insert(&bt->r, k, v))
   {
     bt->r = node_rebalance(bt->r);
   }
@@ -267,19 +288,67 @@ bt_free(bt_t *bt)
   free(bt);
 }
 
-vec_t *
-intcode_run(int64_t *prog, size_t sz, int64_t *in, size_t insz)
+struct intcode_t
 {
-  vec_t *out = vec_new();
-  bt_t *m = bt_new();
+  bt_t *m;
+  vec_t *o;
+};
+
+intcode_t *
+intcode_new(int64_t *prog, size_t sz)
+{
+  intcode_t *m = malloc(sizeof(intcode_t));
+  m->m = bt_new();
+  m->o = vec_new();
+  for (size_t i = 0; i < sz; i++)
+  {
+    bt_insert(m->m, i, prog[i]);
+  }
+  return m;
+}
+
+intcode_t *
+intcode_cpy(intcode_t *m)
+{
+  if (!m) return NULL;
+  intcode_t *cpy = malloc(sizeof(intcode_t));
+  cpy->m = bt_cpy(m->m);
+  cpy->o = vec_cpy(m->o);
+  return cpy;
+}
+
+vec_t *
+intcode_out(intcode_t *m)
+{
+  return m->o;
+}
+
+int64_t
+intcode_mem_get(intcode_t *m, int64_t k)
+{
+  return bt_get(m->m, k);
+}
+
+void
+intcode_mem_set(intcode_t *m, int64_t k, int64_t v)
+{
+  bt_insert(m->m, k, v);
+}
+
+void
+intcode_free(intcode_t *m)
+{
+  vec_free(m->o);
+  bt_free(m->m);
+  free(m);
+}
+
+void
+intcode_run(intcode_t *m, int64_t *in)
+{
   int64_t ip = 0;
   int64_t base = 0;
   size_t inpos = 0;
-
-  for (size_t i = 0; i < sz; i++)
-  {
-    bt_insert(m, i, prog[i]);
-  }
 
   while (1)
   {
@@ -287,40 +356,40 @@ intcode_run(int64_t *prog, size_t sz, int64_t *in, size_t insz)
     int64_t opc, op, modes;
     int halt = 0;
 
-    opc = bt_get(m, ip);
+    opc = bt_get(m->m, ip);
     op = opc % 100;
     modes = opc / 100;
     halt = 0;
-    pa = bt_get(m, ip + 1);
-    pb = bt_get(m, ip + 2);
-    pc = bt_get(m, ip + 3);
+    pa = bt_get(m->m, ip + 1);
+    pb = bt_get(m->m, ip + 2);
+    pc = bt_get(m->m, ip + 3);
     ma = modes % 10; modes /= 10;
     mb = modes % 10; modes /= 10;
     mc = modes % 10; modes /= 10;
     if (ma == 2) pa += base;
     if (mb == 2) pb += base;
     if (mc == 2) pc += base;
-    a = (ma == 1 ? pa : bt_get(m, pa));
-    b = (mb == 1 ? pb : bt_get(m, pb));
+    a = (ma == 1 ? pa : bt_get(m->m, pa));
+    b = (mb == 1 ? pb : bt_get(m->m, pb));
 
     // printf("ip: %ld, opc: %ld, pa: %ld, pb: %ld, ma: %ld, mb: %ld, a: %ld, b: %ld\n", ip, opc, pa, pb, ma, mb, a, b);
 
     switch (op)
     {
     case 1:
-      bt_insert(m, pc, a + b);
+      bt_insert(m->m, pc, a + b);
       ip += 4;
       break;
     case 2:
-      bt_insert(m, pc, a * b);
+      bt_insert(m->m, pc, a * b);
       ip += 4;
       break;
     case 3:
-      bt_insert(m, pa, in[inpos++]);
+      bt_insert(m->m, pa, in[inpos++]);
       ip += 2;
       break;
     case 4:
-      vec_append(out, a);
+      vec_append(m->o, a);
       ip += 2;
       break;
     case 5:
@@ -332,11 +401,11 @@ intcode_run(int64_t *prog, size_t sz, int64_t *in, size_t insz)
       if (!a) ip = b;
       break;
     case 7:
-      bt_insert(m, pc, a < b);
+      bt_insert(m->m, pc, a < b);
       ip += 4;
       break;
     case 8:
-      bt_insert(m, pc, a == b);
+      bt_insert(m->m, pc, a == b);
       ip += 4;
       break;
     case 9:
@@ -356,7 +425,4 @@ intcode_run(int64_t *prog, size_t sz, int64_t *in, size_t insz)
       break;
     }
   }
-
-  bt_free(m);
-  return out;
 }
