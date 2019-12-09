@@ -12,7 +12,7 @@ module IntCode
   , readPure, readT, writeT
   ) where
 
-import Control.Lens (makeLenses, at, ix, use, uses, over, _2, (&), (^.), (^?!), (.~), (%~), (?~), (%=), (?=))
+import Control.Lens (makeLenses, at, ix, use, uses, over, _2, (&), (^.), (^?!), (.~), (+~), (%~), (?~), (%=), (?=))
 import Control.Monad (when)
 import Control.Monad.State.Strict (MonadState)
 import Data.Has (Has, hasLens)
@@ -21,7 +21,9 @@ import Data.Maybe (fromMaybe)
 
 import qualified Data.HashMap.Strict as HM (fromList)
 
-data IntCode = OpAdd | OpMul | OpInput | OpOutput | OpJumpT | OpJumpF | OpLT | OpEQ | Halt
+data IntCode = OpAdd | OpMul | OpInput | OpOutput | OpJumpT | OpJumpF | OpLT | OpEQ | OpSetBase | Halt
+  deriving (Show, Eq)
+data Mode = Pos | Imm | Rel
   deriving (Show, Eq)
 
 type Tape = HashMap Int Int
@@ -30,6 +32,7 @@ data TapeMachine = TapeMachine { _tapePC      :: Int
                                , _tapeIn      :: [Int]
                                , _tapeInPos   :: Int
                                , _tapeOut     :: [Int]
+                               , _relBase     :: Int
                                , _tape        :: Tape
                                }
   deriving (Show, Eq)
@@ -39,12 +42,13 @@ toTape :: String -> Tape
 toTape x = let y = read $ "[" ++ x ++ "]" in HM.fromList $ zip [0..] y
 
 initialMachine :: [Int] -> Tape -> TapeMachine
-initialMachine i = TapeMachine 0 i 0 []
+initialMachine i = TapeMachine 0 i 0 [] 0
 
 decode :: (Has TapeMachine s, MonadState s m) => m (IntCode, [Int], [Int], Int)
 decode = do
   i <- use (hasLens . tapePC)
   t <- use (hasLens . tape)
+  b <- use (hasLens . relBase)
   n <- readT i
   (op, ip) <- over _2 (i+) <$>
     case n `mod` 100 of
@@ -56,18 +60,21 @@ decode = do
          6  -> pure (OpJumpF, 3)
          7  -> pure (OpLT, 4)
          8  -> pure (OpEQ, 4)
+         9  -> pure (OpSetBase, 2)
          99 -> pure (Halt, 1)
          x  -> use (hasLens . tapePC) >>= \j -> error $ "Unexpected opcode at index " ++ show j ++ ": " ++ show x
   let modes = mode n <$> [1..]
       ptrs  = flip readPure t . (i+) <$> [1..]
-      args  = zipWith (\m x -> if m then readPure x t else x) modes ptrs
-  return (op, ptrs, args, ip)
+      rptrs = zipWith (\m x -> if m == Rel then b + x else x) modes ptrs
+      args  = zipWith (\m x -> if m == Imm then x else readPure x t) modes rptrs
+  return (op, rptrs, args, ip)
 
-mode :: Int -> Int -> Bool
+mode :: Int -> Int -> Mode
 mode x n =
   case (x `div` 10^(n + 1)) `mod` 10 of
-       0 -> True  -- Rel
-       1 -> False -- Imm
+       0 -> Pos
+       1 -> Imm
+       2 -> Rel
        z -> error $ "Unexpected mode: (" ++ show x ++ ", " ++ show n ++ ") -> " ++ show z
 
 --input :: (Has TapeMachine s, MonadState s m) => m Int
@@ -81,7 +88,7 @@ output :: (Has TapeMachine s, MonadState s m) => Int -> m ()
 output = (hasLens . tapeOut %=) . (:)
 
 readPure :: Int -> Tape -> Int
-readPure i t = fromMaybe (error $ "Invalid tape index: " ++ show i) $ t ^. at i
+readPure i t = fromMaybe 0 $ t ^. at i
 
 readT :: (Has TapeMachine s, MonadState s m) => Int -> m Int
 readT = uses (hasLens . tape) . readPure
@@ -97,14 +104,16 @@ eval = do
     let modifyState s = s & writeP s
                           & tapeInPos %~ (if op == OpInput then succ else id)
                           & tapePC .~ npc
+                          & setBase
         writeP s =
           case op of
-               OpAdd   -> tape . at pc ?~ a + b
-               OpMul   -> tape . at pc ?~ a * b
-               OpInput -> tape . at pa ?~ (s ^?! tapeIn . ix (s ^. tapeInPos))
-               OpLT    -> tape . at pc ?~ (fromIntegral . fromEnum $ a < b)
-               OpEQ    -> tape . at pc ?~ (fromIntegral . fromEnum $ a == b)
-               _       -> id
+               OpAdd     -> tape . at pc ?~ a + b
+               OpMul     -> tape . at pc ?~ a * b
+               OpInput   -> tape . at pa ?~ (s ^?! tapeIn . ix (s ^. tapeInPos))
+               OpLT      -> tape . at pc ?~ (fromIntegral . fromEnum $ a < b)
+               OpEQ      -> tape . at pc ?~ (fromIntegral . fromEnum $ a == b)
+               _         -> id
+        setBase = if op == OpSetBase then relBase +~ a else id
         npc =
           case op of
                OpJumpT -> if a /= 0 then b else ip
