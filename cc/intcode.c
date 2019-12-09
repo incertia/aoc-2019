@@ -59,19 +59,124 @@ vec_free(vec_t *v)
 typedef struct node_t
 {
   int64_t k, v;
-  struct node_t *l, *r;
+  struct node_t *l, *r, *p;
 } node_t;
 
 node_t *
 node_new()
 {
   node_t *node = malloc(sizeof(node_t));
-  node->l = node->r = NULL;
+  node->p = node->l = node->r = NULL;
   return node;
 }
 
-void
-node_insert(node_t **pn, int64_t k, int64_t v)
+int
+node_height(node_t *node)
+{
+  int l, r;
+  if (!node) return 0;
+  l = node_height(node->l);
+  r = node_height(node->r);
+  return 1 + (l < r ? r : l);
+}
+
+node_t *
+node_rebalance(node_t *x)
+{
+  int b, zb, l, r;
+  node_t *z;
+
+  if (!x) return NULL;
+
+  x->l = node_rebalance(x->l);
+  x->r = node_rebalance(x->r);
+
+  l = node_height(x->l); r = node_height(x->r);
+  b = l - r;
+
+  if (b == -2)
+  {
+    z = x->r;
+    zb = node_height(z->l) - node_height(z->r);
+    if (zb == 0 || zb == -1)
+    {
+      z->p = x->p;
+      x->p = z;
+      x->r = z->l;
+      z->l = x;
+      if (x->r) x->r->p = x;
+
+      return z;
+    }
+    else if (zb == 1)
+    {
+      node_t *y = z->l;
+      y->p = x->p;
+      x->p = z->p = y;
+      x->r = y->l;
+      z->l = y->r;
+      y->l = x; y->r = z;
+      if (x->r) x->r->p = x;
+      if (z->l) z->l->p = z;
+
+      return y;
+    }
+    else
+    {
+      printf("|balance| > 1!!\n");
+      exit(3);
+      return NULL;
+    }
+  }
+  else if (b == 2)
+  {
+    z = x->l;
+    zb = node_height(z->l) - node_height(z->r);
+    if (zb == 0 || zb == 1)
+    {
+      z->p = x->p;
+      x->p = z;
+      x->l = z->r;
+      z->r = x;
+      if (x->l) x->l->p = x;
+
+      return z;
+    }
+    else if (zb == -1)
+    {
+      node_t *y = z->r;
+      y->p = x->p;
+      x->p = z->p = y;
+      x->l = y->r;
+      z->r = y->l;
+      y->r = x; y->l = z;
+      if (x->l) x->l->p = x;
+      if (z->r) z->r->p = z;
+
+      return y;
+    }
+    else
+    {
+      printf("|balance| > 1!!\n");
+      exit(3);
+      return NULL;
+    }
+    return NULL;
+  }
+  else if (b >= -1 && b <= 1)
+  {
+    return x;
+  }
+  else
+  {
+    printf("oops\n");
+    exit(4);
+    return NULL;
+  }
+}
+
+int
+node_insert(node_t **pn, node_t *p, int64_t k, int64_t v)
 {
   node_t *n;
   if (*pn)
@@ -80,21 +185,23 @@ node_insert(node_t **pn, int64_t k, int64_t v)
     if (k == n->k)
     {
       n->v = v;
+      return 0;
     }
     else if (k < n->k)
     {
-      node_insert(&n->l, k, v);
+      return node_insert(&n->l, n, k, v);
     }
     else
     {
-      node_insert(&n->r, k, v);
+      return node_insert(&n->r, n, k, v);
     }
   }
   else
   {
     n = *pn = node_new();
-    n->k = k;
-    n->v = v;
+    n->k = k; n->v = v;
+    n->p = p;
+    return 1;
   }
 }
 
@@ -142,7 +249,10 @@ bt_new()
 void
 bt_insert(bt_t *bt, int64_t k, int64_t v)
 {
-  node_insert(&bt->r, k, v);
+  if (node_insert(&bt->r, NULL, k, v))
+  {
+    bt->r = node_rebalance(bt->r);
+  }
 }
 
 int64_t bt_get(bt_t *bt, int64_t k)
@@ -238,6 +348,7 @@ intcode_run(int64_t *prog, size_t sz, int64_t *in, size_t insz)
       break;
     default:
       printf("unhandled opcode: %ld\n", op);
+      exit(2);
       break;
     }
     if (halt)
