@@ -112,6 +112,19 @@ We now have to migrate to each solver spitting out `String` instead of
 `Integer`... We run the results of stacking the layers through a display
 function to make it easier for us to read.
 
+## Day 9
+
+### Part A
+
+We switch the mode from `Bool` to `Mode` and modify `decode` accordingly,
+returning the correct relative pointers `rptrs`. Take care that when decoding
+immediate values you also apply the relative positioning by decoding with
+`rptrs` instead of `ptrs`.
+
+### Part B
+
+Run the program with input `2`.
+
 ## `IntCode`
 
 `eval` runs the machine by `decode`ing the current instruction and setting the
