@@ -60,7 +60,7 @@ solve(int z)
   if (!z)
   {
     size_t s = 0;
-    while (scanf("%sl", l) != EOF)
+    while (scanf("%s", l) != EOF)
     {
       l[3] = 0;
       strcpy(planets[sz].n, l + 4);
