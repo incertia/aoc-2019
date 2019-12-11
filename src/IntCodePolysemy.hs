@@ -233,8 +233,9 @@ stateToST s sem = do
   return (end, res)
 {-# INLINE stateToST #-}
 
--- runMExistential :: forall m st a. Monad (m st) => Sem '[Embed (m st)] a -> m st a
--- runMExistential = runM
+-- runMExistential :: forall (m :: k -> * -> *) (st :: k) a. Monad (m st) => (Sem '[Embed (m st)] a) -> m st a
+-- runMExistential sem = runM (sem)
+
 stateToIO
     :: forall s r a
      . Member (Embed IO) r

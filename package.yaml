@@ -19,6 +19,7 @@ dependencies:
   - lens
   - mtl
   - polysemy
+  - polysemy-plugin
   - split
   - time
   - unordered-containers
