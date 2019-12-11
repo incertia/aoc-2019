@@ -3,8 +3,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoMonadFailDesugaring #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
@@ -16,6 +18,8 @@ module IntCodePolysemy
   , toTape
   , execMachine
   , runMachine
+  , runMachineST
+  , runMachineIO
   , initialMachine
   ) where
 
@@ -27,6 +31,8 @@ import Control.Lens.TH
   (makeLenses)
 import Control.Monad
   (when)
+import Control.Monad.ST
+  (ST, runST)
 import Data.Function
   ((&))
 import Data.Has
@@ -35,17 +41,23 @@ import Data.Hashable
   (Hashable)
 import Data.HashMap.Strict
   (HashMap, fromList)
+import Data.IORef
+  (IORef, newIORef, readIORef, writeIORef)
 import Data.Maybe
   (fromMaybe)
+import Data.STRef
+  (STRef, newSTRef, readSTRef, writeSTRef)
 
 import Polysemy
-  (Member, Sem, makeSem, run)
+  (Member, Sem, makeSem, run, runM, interpret)
+import Polysemy.Embed
+  (Embed, embed, runEmbedded)
 import Polysemy.Input
   (Input, input, runInputList)
 import Polysemy.Output
   (Output, output, runOutputList)
 import Polysemy.State
-  (State, get, gets, modify, runState)
+  (State(..), get, gets, modify, runState, runStateIORef)
 
 type Tape a = HashMap a a
 
@@ -162,3 +174,76 @@ runMachine m i = execMachine @a @(TapeMachine a)
                & runOutputList
                & run
                & fst
+
+runMachineST :: forall a. TapeFormat a => TapeMachine a -> [a] -> [a]
+runMachineST m i = fst $ runST machineST
+  where machineST :: forall st. ST st ([a], (TapeMachine a, ()))
+        machineST = execMachine @a @(TapeMachine a)
+                  & stateToST @_ @st m
+                  & runInputList i
+                  & runOutputList
+                  & runM
+
+runMachineIO :: forall a. TapeFormat a => TapeMachine a -> [a] -> IO [a]
+runMachineIO m i = execMachine @a @(TapeMachine a)
+                 & stateToIO m
+                 & runInputList i
+                 & runOutputList
+                 & runM
+                 & fmap fst
+
+--newtype STWrapper a = STWrapper { unwrapST :: forall s. ST s a }
+--newtype STRefWrapper a = STRefWrapper { unwrapSTRef :: forall s. STRef s a }
+--
+--instance Functor STWrapper where
+--  fmap f (STWrapper st) = STWrapper $ f <$> st
+--
+--instance Applicative STWrapper where
+--  pure x = STWrapper (pure x)
+--  (STWrapper fab) <*> (STWrapper fa) = STWrapper $ fab <*> fa
+--
+--instance Monad STWrapper where
+--  (STWrapper st) >>= f = STWrapper $ st >>= \a -> unwrapST (f a)
+--
+--liftST :: (a -> (forall s. ST s b)) -> a -> STWrapper b
+--liftST f a = STWrapper (f a)
+--
+--liftST2 :: (a -> b -> (forall s. ST s c)) -> a -> b -> STWrapper c
+--liftST2 f a b = STWrapper (f a b)
+
+runStateSTRef :: forall s st r a
+               . Member (Embed (ST st)) r
+              => STRef st s
+              -> Sem (State s ': r) a
+              -> Sem r a
+runStateSTRef ref = interpret $ \case
+  Get   -> embed @(ST st) $ readSTRef ref
+  Put s -> embed @(ST st) $ writeSTRef ref s
+{-# INLINE runStateSTRef #-}
+
+stateToST :: forall s st r a
+           . Member (Embed (ST st)) r
+          => s
+          -> Sem (State s ': r) a
+          -> Sem r (s, a)
+stateToST s sem = do
+  ref <- embed @(ST st) $ newSTRef s
+  res <- runStateSTRef ref sem
+  end <- embed @(ST st) $ readSTRef ref
+  return (end, res)
+{-# INLINE stateToST #-}
+
+-- runMExistential :: forall m st a. Monad (m st) => Sem '[Embed (m st)] a -> m st a
+-- runMExistential = runM
+stateToIO
+    :: forall s r a
+     . Member (Embed IO) r
+    => s
+    -> Sem (State s ': r) a
+    -> Sem r (s, a)
+stateToIO s sem = do
+  ref <- embed $ newIORef s
+  res <- runStateIORef ref sem
+  end <- embed $ readIORef ref
+  return (end, res)
+{-# INLINE stateToIO #-}
