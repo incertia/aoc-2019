@@ -13,8 +13,7 @@ solve(int z)
   size_t c = 0;
   int64_t *p;
   intcode_t *m;
-  vec_t *out;
-  int64_t input[] = {z + 1};
+  vec_t *in, *out;
 
   getline(&l, &sz, stdin);
   for (size_t i = 0; i < sz; i++)
@@ -35,8 +34,10 @@ solve(int z)
   free(l);
 
   m = intcode_new(p, c);
+  in = intcode_in(m);
   out = intcode_out(m);
-  intcode_run(m, input);
+  vec_append(in, z + 1);
+  intcode_run(m, 0);
   printf("%ld\n", vec_get(out, vec_size(out) - 1));
 
   intcode_free(m);

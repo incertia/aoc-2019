@@ -58,7 +58,7 @@ vec_append(vec_t *v, int64_t d)
   if (v->sz == v->cap)
   {
     v->cap *= 2;
-    v->v = realloc(v, v->cap);
+    v->v = realloc(v->v, v->cap * sizeof(int64_t));
   }
   v->v[v->sz++] = d;
 }
@@ -236,6 +236,22 @@ int64_t node_get(node_t *node, int64_t k)
   }
 }
 
+size_t
+node_size(node_t *node)
+{
+  if (!node) return 0;
+  return 1 + node_size(node->l) + node_size(node->r);
+}
+
+void
+node_keys(node_t *node, vec_t *v)
+{
+  if (!node) return;
+  node_keys(node->l, v);
+  vec_append(v, node->k);
+  node_keys(node->r, v);
+}
+
 void
 node_free(node_t *node)
 {
@@ -245,10 +261,10 @@ node_free(node_t *node)
   free(node);
 }
 
-typedef struct
+struct bt_t
 {
   node_t *r;
-} bt_t;
+};
 
 bt_t *
 bt_new()
@@ -276,9 +292,24 @@ bt_insert(bt_t *bt, int64_t k, int64_t v)
   }
 }
 
-int64_t bt_get(bt_t *bt, int64_t k)
+int64_t
+bt_get(bt_t *bt, int64_t k)
 {
   return node_get(bt->r, k);
+}
+
+size_t
+bt_size(bt_t *bt)
+{
+  return node_size(bt->r);
+}
+
+vec_t *
+bt_keys(bt_t *bt)
+{
+  vec_t *k = vec_new();
+  node_keys(bt->r, k);
+  return k;
 }
 
 void
@@ -291,7 +322,11 @@ bt_free(bt_t *bt)
 struct intcode_t
 {
   bt_t *m;
+  vec_t *i;
   vec_t *o;
+  int64_t ip;
+  size_t inpos;
+  int64_t base;
 };
 
 intcode_t *
@@ -299,7 +334,11 @@ intcode_new(int64_t *prog, size_t sz)
 {
   intcode_t *m = malloc(sizeof(intcode_t));
   m->m = bt_new();
+  m->i = vec_new();
   m->o = vec_new();
+  m->ip = 0;
+  m->inpos = 0;
+  m->base = 0;
   for (size_t i = 0; i < sz; i++)
   {
     bt_insert(m->m, i, prog[i]);
@@ -313,8 +352,18 @@ intcode_cpy(intcode_t *m)
   if (!m) return NULL;
   intcode_t *cpy = malloc(sizeof(intcode_t));
   cpy->m = bt_cpy(m->m);
+  cpy->i = vec_cpy(m->i);
   cpy->o = vec_cpy(m->o);
+  cpy->ip = m->ip;
+  cpy->inpos = m->inpos;
+  cpy->base = m->base;
   return cpy;
+}
+
+vec_t *
+intcode_in(intcode_t *m)
+{
+  return m->i;
 }
 
 vec_t *
@@ -339,84 +388,87 @@ void
 intcode_free(intcode_t *m)
 {
   vec_free(m->o);
+  vec_free(m->i);
   bt_free(m->m);
   free(m);
 }
 
-void
-intcode_run(intcode_t *m, int64_t *in)
+int
+intcode_run(intcode_t *m, int io)
 {
-  int64_t ip = 0;
-  int64_t base = 0;
-  size_t inpos = 0;
-
   while (1)
   {
     int64_t pa, pb, pc, ma, mb, mc, a, b;
     int64_t opc, op, modes;
-    int halt = 0;
+    int halt;
 
-    opc = bt_get(m->m, ip);
+    opc = bt_get(m->m, m->ip);
     op = opc % 100;
     modes = opc / 100;
     halt = 0;
-    pa = bt_get(m->m, ip + 1);
-    pb = bt_get(m->m, ip + 2);
-    pc = bt_get(m->m, ip + 3);
+    pa = bt_get(m->m, m->ip + 1);
+    pb = bt_get(m->m, m->ip + 2);
+    pc = bt_get(m->m, m->ip + 3);
     ma = modes % 10; modes /= 10;
     mb = modes % 10; modes /= 10;
     mc = modes % 10; modes /= 10;
-    if (ma == 2) pa += base;
-    if (mb == 2) pb += base;
-    if (mc == 2) pc += base;
+    if (ma == 2) pa += m->base;
+    if (mb == 2) pb += m->base;
+    if (mc == 2) pc += m->base;
     a = (ma == 1 ? pa : bt_get(m->m, pa));
     b = (mb == 1 ? pb : bt_get(m->m, pb));
 
-    // printf("ip: %ld, opc: %ld, pa: %ld, pb: %ld, ma: %ld, mb: %ld, a: %ld, b: %ld\n", ip, opc, pa, pb, ma, mb, a, b);
+    // printf("ip: %ld, opc: %ld, pa: %ld, pb: %ld, ma: %ld, mb: %ld, a: %ld, b: %ld\n", m->ip, opc, pa, pb, ma, mb, a, b);
 
     switch (op)
     {
     case 1:
       bt_insert(m->m, pc, a + b);
-      ip += 4;
+      m->ip += 4;
       break;
     case 2:
       bt_insert(m->m, pc, a * b);
-      ip += 4;
+      m->ip += 4;
       break;
     case 3:
-      bt_insert(m->m, pa, in[inpos++]);
-      ip += 2;
+      if (m->inpos == m->i->sz) {
+        return NEEDS_INPUT;
+      }
+      bt_insert(m->m, pa, vec_get(m->i, m->inpos++));
+      m->ip += 2;
       break;
     case 4:
       vec_append(m->o, a);
-      ip += 2;
+      m->ip += 2;
+      if (io) {
+        return GAVE_OUTPUT;
+      }
       break;
     case 5:
-      ip += 3;
-      if (a) ip = b;
+      m->ip += 3;
+      if (a) m->ip = b;
       break;
     case 6:
-      ip += 3;
-      if (!a) ip = b;
+      m->ip += 3;
+      if (!a) m->ip = b;
       break;
     case 7:
       bt_insert(m->m, pc, a < b);
-      ip += 4;
+      m->ip += 4;
       break;
     case 8:
       bt_insert(m->m, pc, a == b);
-      ip += 4;
+      m->ip += 4;
       break;
     case 9:
-      base += a;
-      ip += 2;
+      m->base += a;
+      m->ip += 2;
       break;
     case 99:
       halt = 1;
       break;
     default:
-      printf("unhandled opcode: %ld\n", op);
+      printf("unhandled opcode at position %ld: %ld\n", m->ip, op);
       exit(2);
       break;
     }
@@ -425,4 +477,5 @@ intcode_run(intcode_t *m, int64_t *in)
       break;
     }
   }
+  return HALTED;
 }

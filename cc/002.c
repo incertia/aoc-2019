@@ -38,7 +38,7 @@ solve(int z)
   {
     intcode_mem_set(m, 1, 12);
     intcode_mem_set(m, 2, 2);
-    intcode_run(m, NULL);
+    intcode_run(m, 0);
     printf("%ld\n", intcode_mem_get(m, 0));
   }
   else
@@ -53,7 +53,7 @@ solve(int z)
         intcode_t *mm = intcode_cpy(m);
         intcode_mem_set(mm, 1, a);
         intcode_mem_set(mm, 2, b);
-        intcode_run(mm, NULL);
+        intcode_run(mm, 0);
         if (intcode_mem_get(mm, 0) == 19690720)
         {
           found = 1;
