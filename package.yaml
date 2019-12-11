@@ -18,6 +18,7 @@ dependencies:
   - hashable
   - lens
   - mtl
+  - polysemy
   - split
   - time
   - unordered-containers
