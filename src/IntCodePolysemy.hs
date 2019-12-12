@@ -192,25 +192,6 @@ runMachineIO m i = execMachine @a @(TapeMachine a)
                  & runM
                  & fmap fst
 
---newtype STWrapper a = STWrapper { unwrapST :: forall s. ST s a }
---newtype STRefWrapper a = STRefWrapper { unwrapSTRef :: forall s. STRef s a }
---
---instance Functor STWrapper where
---  fmap f (STWrapper st) = STWrapper $ f <$> st
---
---instance Applicative STWrapper where
---  pure x = STWrapper (pure x)
---  (STWrapper fab) <*> (STWrapper fa) = STWrapper $ fab <*> fa
---
---instance Monad STWrapper where
---  (STWrapper st) >>= f = STWrapper $ st >>= \a -> unwrapST (f a)
---
---liftST :: (a -> (forall s. ST s b)) -> a -> STWrapper b
---liftST f a = STWrapper (f a)
---
---liftST2 :: (a -> b -> (forall s. ST s c)) -> a -> b -> STWrapper c
---liftST2 f a b = STWrapper (f a b)
-
 runStateSTRef :: forall s st r a
                . Member (Embed (ST st)) r
               => STRef st s
@@ -218,7 +199,7 @@ runStateSTRef :: forall s st r a
               -> Sem r a
 runStateSTRef ref = interpret $ \case
   Get   -> embed @(ST st) $ readSTRef ref
-  Put s -> embed @(ST st) $ writeSTRef ref s
+  Put s -> embed @(ST st) $ s `seq` writeSTRef ref s
 {-# INLINE runStateSTRef #-}
 
 stateToST :: forall s st r a
@@ -232,9 +213,6 @@ stateToST s sem = do
   end <- embed @(ST st) $ readSTRef ref
   return (end, res)
 {-# INLINE stateToST #-}
-
--- runMExistential :: forall (m :: k -> * -> *) (st :: k) a. Monad (m st) => (Sem '[Embed (m st)] a) -> m st a
--- runMExistential sem = runM (sem)
 
 stateToIO
     :: forall s r a
