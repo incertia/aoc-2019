@@ -42,22 +42,22 @@ import Data.Hashable
 import Data.HashMap.Strict
   (HashMap, fromList)
 import Data.IORef
-  (IORef, newIORef, readIORef, writeIORef)
+  (newIORef, readIORef)
 import Data.Maybe
   (fromMaybe)
 import Data.STRef
   (STRef, newSTRef, readSTRef, writeSTRef)
 
 import Polysemy
-  (Member, Sem, makeSem, run, runM, interpret)
+  (Member, Sem, run, runM, interpret)
 import Polysemy.Embed
-  (Embed, embed, runEmbedded)
+  (Embed, embed)
 import Polysemy.Input
   (Input, input, runInputList)
 import Polysemy.Output
   (Output, output, runOutputList)
 import Polysemy.State
-  (State(..), get, gets, modify, runState, runStateIORef)
+  (State(..), gets, modify, runState, runStateIORef)
 
 type Tape a = HashMap a a
 
@@ -114,7 +114,7 @@ decode = do
   return (op, ptrs, args, d)
 
 toOpcode :: TapeFormat a => a -> a -> (IntCode, a)
-toOpcode op ip =
+toOpcode op p =
   case op `mod` 100 of
        1  -> (OpAdd    , 4)
        2  -> (OpMul    , 4)
@@ -126,7 +126,7 @@ toOpcode op ip =
        8  -> (OpEQ     , 4)
        9  -> (OpSetBase, 2)
        99 -> (Halt     , 1)
-       x  -> error $ "bad opcode at position " ++ show ip ++ ": " ++ show x
+       x  -> error $ "bad opcode at position " ++ show p ++ ": " ++ show x
 
 toMode :: TapeFormat a => a -> Int -> Mode
 toMode op n =
