@@ -34,6 +34,12 @@ vec_cpy(vec_t *v)
   return cpy;
 }
 
+void
+vec_reset(vec_t *v)
+{
+  v->sz = 0;
+}
+
 size_t
 vec_size(vec_t *v)
 {
@@ -49,7 +55,14 @@ vec_get(vec_t *v, size_t n)
 void
 vec_set(vec_t *v, size_t n, int64_t d)
 {
+  if (n + 1 > v->cap)
+  {
+    v->cap *= 2;
+    v->cap = v->cap > n + 1 ? v->cap : n + 1;
+    v->v = realloc(v->v, v->cap * sizeof(int64_t));
+  }
   v->v[n] = d;
+  v->sz = v->sz > n + 1 ? v->sz : n + 1;
 }
 
 void

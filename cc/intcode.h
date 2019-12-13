@@ -8,6 +8,7 @@ typedef struct vec_t vec_t;
 
 vec_t  *vec_new();
 vec_t  *vec_cpy(vec_t *v);
+void    vec_reset(vec_t *v);
 size_t  vec_size(vec_t *v);
 int64_t vec_get(vec_t *v, size_t n);
 void    vec_set(vec_t *v, size_t n, int64_t d);
