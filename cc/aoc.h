@@ -5,8 +5,10 @@
 
 int usage(int argc, char **argv);
 
+#ifndef __MACH__
 void cstart();
 void cend();
 uint64_t elapsed();
+#endif
 
 #endif

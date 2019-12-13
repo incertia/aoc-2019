@@ -25,6 +25,7 @@ usage(int argc, char **argv)
   }
 }
 
+#ifndef __MACH__
 void cstart()
 {
   clock_gettime(CLOCK_MONOTONIC_RAW, &start);
@@ -41,3 +42,4 @@ uint64_t elapsed()
   time_t n = end.tv_nsec - start.tv_nsec;
   return s * 1000 + n / 1000000;
 }
+#endif

@@ -29,15 +29,13 @@ solve(int _)
   bx = px = 0;
 
   int64_t minX, minY, maxX, maxY;
-  FILE *fin;
 
   bt_t *t;
   vec_t *in, *out;
 
   minX = minY = maxX = maxY = 0;
 
-  fin = fopen("../input/013", "r");
-  getline(&l, &sz, fin);
+  getline(&l, &sz, stdin);
   c = 0;
   for (size_t i = 0; i < sz; i++)
   {
@@ -50,12 +48,11 @@ solve(int _)
     if (l[i] == ',' || l[i] == '\n')
     {
       l[i] = 0;
-      sscanf(x, "%ld", p + c++);
+      sscanf(x, "%lld", p + c++);
       x = l + i + 1;
     }
   }
   free(l);
-  fclose(fin);
 
   m = intcode_new(p, c);
   in = intcode_in(m);
@@ -138,7 +135,7 @@ solve(int _)
       }
     }
 
-    printf("%ld\n", score);
+    printf("%lld\n", score);
   }
 
   bt_free(t);

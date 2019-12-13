@@ -93,7 +93,7 @@ solve(int _)
       e += k * p;
     }
 
-    printf("%ld\n", e);
+    printf("%lld\n", e);
   }
   else
   {
@@ -155,7 +155,7 @@ solve(int _)
       pz++;
       if (yes) break;
     }
-    printf("%ld, %ld, %ld, %ld\n", px, py, pz, lcm(px, lcm(py, pz)));
+    printf("%lld\n", lcm(px, lcm(py, pz)));
   }
 
   vec_free(vz);

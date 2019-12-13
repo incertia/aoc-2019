@@ -26,7 +26,7 @@ solve(int z)
     if (l[i] == ',' || l[i] == '\n')
     {
       l[i] = 0;
-      sscanf(x, "%ld", p + c++);
+      sscanf(x, "%lld", p + c++);
       x = l + i + 1;
     }
   }
@@ -39,7 +39,7 @@ solve(int z)
     intcode_mem_set(m, 1, 12);
     intcode_mem_set(m, 2, 2);
     intcode_run(m, 0);
-    printf("%ld\n", intcode_mem_get(m, 0));
+    printf("%lld\n", intcode_mem_get(m, 0));
   }
   else
   {

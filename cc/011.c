@@ -50,7 +50,7 @@ solve(int z)
     if (l[i] == ',' || l[i] == '\n')
     {
       l[i] = 0;
-      sscanf(x, "%ld", p + c++);
+      sscanf(x, "%lld", p + c++);
       x = l + i + 1;
     }
   }
@@ -92,7 +92,7 @@ solve(int z)
       }
       else
       {
-        printf("bad dir: %ld\n", d);
+        printf("bad dir: %lld\n", d);
         exit(6);
       }
       // move forward
