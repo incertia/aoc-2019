@@ -58,7 +58,7 @@ cost rs ms =
        [("ORE", n)] -> n
        needsRunning -> cost rs ms'
          where runReaction o n = rawOuts & reactIn . traverse . matCount *~ numReacts
-                                                           & reactOut . matCount *~ numReacts
+                                         & reactOut . matCount *~ numReacts
                  where rawOuts = rs ! o
                        numReacts = (n + outnum - 1) `div` outnum
                        outnum = view (reactOut . matCount) rawOuts
