@@ -18,6 +18,7 @@ dependencies:
   - hashable
   - lens
   - mtl
+  - parsec
   - polysemy
   - polysemy-plugin
   - split
