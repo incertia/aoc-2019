@@ -151,6 +151,12 @@ Get the `minimum` and `maximum` `x` and `y` coordinates and draw a picture. We
 use some clever `sequence` and `fmap` tricks to avoid writing list
 comprehensions.
 
+## Day 13
+
+### Part A
+
+Parsing the output after running the machine is easy enough.
+
 ## Day 14
 
 ### Part A
