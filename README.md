@@ -151,6 +151,19 @@ Get the `minimum` and `maximum` `x` and `y` coordinates and draw a picture. We
 use some clever `sequence` and `fmap` tricks to avoid writing list
 comprehensions.
 
+## Day 12
+
+### Part A
+
+Just do the math and calculate.
+
+### Part B
+
+We should find the periods of the `(coord, vel_coord)` pairs and compute the
+`lcm`, because the `step` function has a unique inverse by unapplying velocity
+and unapplying gravity and thus any other repeated state can be inverted to the
+initial state. We do this with `HashSet`s.
+
 ## Day 13
 
 ### Part A
