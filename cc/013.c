@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -48,7 +49,7 @@ solve(int _)
     if (l[i] == ',' || l[i] == '\n')
     {
       l[i] = 0;
-      sscanf(x, "%lld", p + c++);
+      sscanf(x, "%" SCNd64, p + c++);
       x = l + i + 1;
     }
   }
@@ -135,7 +136,7 @@ solve(int _)
       }
     }
 
-    printf("%lld\n", score);
+    printf("%" PRId64 "\n", score);
   }
 
   bt_free(t);

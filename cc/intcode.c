@@ -1,5 +1,6 @@
 #include "intcode.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -481,7 +482,7 @@ intcode_run(intcode_t *m, int io)
       halt = 1;
       break;
     default:
-      printf("unhandled opcode at position %lld: %lld\n", m->ip, op);
+      printf("unhandled opcode at position %" PRId64 ": %" PRId64 "\n", m->ip, op);
       exit(2);
       break;
     }

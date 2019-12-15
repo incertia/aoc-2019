@@ -1,4 +1,4 @@
-set (probs 001 002 003 004 005 006 009 011 012 013)
+set (probs 001 002 003 004 005 006 009 011 012 013 015)
 
 foreach (prob IN LISTS probs)
   add_executable (${prob} main.c ${prob}.c aoc.c intcode.c)

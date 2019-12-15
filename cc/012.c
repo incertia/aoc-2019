@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -93,7 +94,7 @@ solve(int _)
       e += k * p;
     }
 
-    printf("%lld\n", e);
+    printf("%" PRId64 "\n", e);
   }
   else
   {
@@ -155,7 +156,7 @@ solve(int _)
       pz++;
       if (yes) break;
     }
-    printf("%lld\n", lcm(px, lcm(py, pz)));
+    printf("%" PRId64 "\n", lcm(px, lcm(py, pz)));
   }
 
   vec_free(vz);

@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -27,7 +28,7 @@ solve(int z)
     if (l[i] == ',' || l[i] == '\n')
     {
       l[i] = 0;
-      sscanf(x, "%lld", p + c++);
+      sscanf(x, "%" SCNd64, p + c++);
       x = l + i + 1;
     }
   }
@@ -38,7 +39,7 @@ solve(int z)
   out = intcode_out(m);
   vec_append(in, 4 * z + 1);
   intcode_run(m, 0);
-  printf("%lld\n", vec_get(out, vec_size(out) - 1));
+  printf("%" PRId64 "\n", vec_get(out, vec_size(out) - 1));
 
   intcode_free(m);
   free(p);

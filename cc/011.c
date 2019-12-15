@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,7 +51,7 @@ solve(int z)
     if (l[i] == ',' || l[i] == '\n')
     {
       l[i] = 0;
-      sscanf(x, "%lld", p + c++);
+      sscanf(x, "%" SCNd64, p + c++);
       x = l + i + 1;
     }
   }
@@ -92,7 +93,7 @@ solve(int z)
       }
       else
       {
-        printf("bad dir: %lld\n", d);
+        printf("bad dir: %" PRId64 "\n", d);
         exit(6);
       }
       // move forward
