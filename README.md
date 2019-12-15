@@ -125,6 +125,48 @@ immediate values you also apply the relative positioning by decoding with
 
 Run the program with input `2`.
 
+## Day 10
+
+### Part A
+
+Use `gcd` to compute vectors and you count the maximum unique vectors.
+
+### Part B
+
+By taking the cross product you can obtain a measure of "clockwise"-ness. Doing
+some more math takes care of setting the up direction to be the smallest and
+sorting by length. We kill the `head` of each list per go-around and we take the
+200th list element (index `199`) for the solution.
+
+## Day 11
+
+### Part A
+
+Use `scanl` to produce a snapshot of the hull at each step. Count the number of
+keys for the number of locations painted.
+
+### Part B
+
+Get the `minimum` and `maximum` `x` and `y` coordinates and draw a picture. We
+use some clever `sequence` and `fmap` tricks to avoid writing list
+comprehensions.
+
+## Day 14
+
+### Part A
+
+We reverse react `1 FUEL` and get the required amount of `ORE`. `cost` takes a
+map of output materials and amounts and looks up the reaction producing that
+output. We run just enough reactions to satisfy the output. We add the new input
+materials and subtract the unreacted output materials.
+
+### Part B
+
+We do a binary search type thing. We compute the largest `x` such that `2^x
+FUEL` can be produced with our supply. We then keep trying to add the largest
+power of `2` to that number until we can no longer add any more. This is the
+maximum fuel we can produce.
+
 ## `IntCode`
 
 `eval` runs the machine by `decode`ing the current instruction and setting the
