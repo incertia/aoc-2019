@@ -21,6 +21,7 @@ import AOC012 (solve012)
 import AOC013 (solve013)
 import AOC014 (solve014)
 import AOC015 (solve015)
+import AOC016 (solve016)
 
 import AOC009.Polysemy (solve009poly)
 
@@ -29,6 +30,7 @@ solvers = H.fromList
   [ (001, solve001), (002, solve002), (003, solve003), (004, solve004), (005, solve005)
   , (006, solve006), (007, solve007), (008, solve008), (009, solve009), (010, solve010)
   , (011, solve011), (012, solve012), (013, solve013), (014, solve014), (015, solve015)
+  , (016, solve016)
   , (1009, solve009poly)
   ]
 
