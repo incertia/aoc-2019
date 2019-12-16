@@ -1,4 +1,4 @@
-set (probs 001 002 003 004 005 006 009 011 012 013 015)
+set (probs 001 002 003 004 005 006 009 011 012 013 015 016)
 
 add_library (aoc STATIC main.c aoc.c intcode.c)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
