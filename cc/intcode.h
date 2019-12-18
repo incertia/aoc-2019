@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct vec_t vec_t;
 
 vec_t  *vec_new();
@@ -38,5 +42,9 @@ int64_t    intcode_mem_get(intcode_t *m, int64_t k);
 void       intcode_mem_set(intcode_t *m, int64_t k, int64_t v);
 int        intcode_run(intcode_t *m, int io);
 void       intcode_free(intcode_t *m);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
