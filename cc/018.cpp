@@ -23,28 +23,6 @@ public:
   }
 };
 
-class hash_vector_char {
-public:
-  size_t operator()(const vector<char>& v) const
-  {
-    string s;
-    for (auto x : v)
-    {
-      s += x;
-    }
-    return hash<string>{}(s);
-  }
-};
-
-class hash_pair_vector_char {
-public:
-  template <class T>
-  size_t operator()(const pair<T, vector<char>>& p) const
-  {
-    return hash<T>{}(p.first) ^ hash_vector_char{}(p.second);
-  }
-};
-
 size_t
 to_keybit(char c)
 {
@@ -325,13 +303,13 @@ solve(int _)
       if (dists[kl] < min) min = dists[kl];
     }
 
-    if (cnt % 1000 == 0)
-    {
-      string s;
-      for (auto c : lasts) s += c;
-      // cout << "trying keyset " << ks << " at " << s << " (" << pq.size() << ")" << endl;
-    }
-    cnt++;
+    //if (cnt % 1000 == 0)
+    //{
+    //  string s;
+    //  for (auto c : lasts) s += c;
+    //  // cout << "trying keyset " << ks << " at " << s << " (" << pq.size() << ")" << endl;
+    //}
+    //cnt++;
 
     for (size_t i = 0; i < lasts.size(); i++)
     {
