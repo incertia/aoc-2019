@@ -1,6 +1,9 @@
 .stack-work/
 output/
 cbuild/
+debug/
+release/
 *.cabal
 .*.swp
 *.lock
+compile_commands.json
