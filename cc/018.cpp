@@ -23,6 +23,28 @@ public:
   }
 };
 
+class hash_vector_char {
+public:
+  size_t operator()(const vector<char>& v) const
+  {
+    string s;
+    for (auto x : v)
+    {
+      s += x;
+    }
+    return hash<string>{}(s);
+  }
+};
+
+class hash_pair_vector_char {
+public:
+  template <class T>
+  size_t operator()(const pair<T, vector<char>>& p) const
+  {
+    return hash<T>{}(p.first) ^ hash_vector_char{}(p.second);
+  }
+};
+
 size_t
 to_keybit(char c)
 {
@@ -37,11 +59,68 @@ to_keybit(char c)
   exit(5);
 }
 
-// pair<keys needed, distance>
+unordered_map<char, pair<size_t, size_t>>
+keys_reachable(const vector<char> &m,
+               size_t w, size_t h,
+               pair<size_t, size_t> start)
+{
+  unordered_map<char, pair<size_t, size_t>> ret;
+  unordered_map<pair<size_t, size_t>, bool, hash_pair> visited;
+  queue<pair<size_t, size_t>> q;
+
+  q.push(start);
+
+  auto inrange = [w, h](size_t x, size_t y) -> bool {
+    return x < w && y < h;
+  };
+  auto wall = [&m = as_const(m), w](size_t x, size_t y) -> bool
+  {
+    return m[y * w + x] == '#';
+  };
+
+  while (q.size())
+  {
+    size_t x, y;
+    pair<size_t, size_t> pos = q.front();
+    tie(x, y) = pos;
+
+    visited[pos] = true;
+
+    char c = m[y * w + x];
+    if (c >= 'a' && c <= 'z')
+    {
+      ret[c] = pos;
+    }
+
+    queue<pair<size_t, size_t>> dirs;
+    dirs.push(make_pair(x - 1, y));
+    dirs.push(make_pair(x + 1, y));
+    dirs.push(make_pair(x, y - 1));
+    dirs.push(make_pair(x, y + 1));
+
+    while (dirs.size())
+    {
+      pair<size_t, size_t> npos;
+      size_t xx, yy;
+      npos = dirs.front();
+      tie(xx, yy) = npos;
+      if (inrange(xx, yy) && !visited[npos] && !wall(xx, yy))
+      {
+        q.push(npos);
+      }
+      dirs.pop();
+    }
+
+    q.pop();
+  }
+
+  return ret;
+}
+
 unordered_map<char, pair<keys, size_t>>
-bfs(vector<char> m,
+bfs(const vector<char> &m,
     size_t w, size_t h,
-    unordered_map<char, pair<size_t, size_t>> km,
+    const unordered_map<char, pair<size_t, size_t>> &km,
     pair<size_t, size_t> last)
 {
   unordered_map<pair<size_t, size_t>, pair<keys, size_t>, hash_pair> keys_req;
@@ -105,7 +184,10 @@ bfs(vector<char> m,
 
   for (auto it : km)
   {
-    ret[it.first] = keys_req[it.second];
+    if (it.first != '@')
+    {
+      ret[it.first] = keys_req[it.second];
+    }
   }
 
   return ret;
@@ -117,11 +199,10 @@ solve(int _)
 {
   vector<string> v;
   vector<char> m;
-  unordered_map<char, pair<size_t, size_t>> km;
-  unordered_map<char, unordered_map<char, pair<keys, size_t>>> key_dists;
-  size_t w = 0;
-  size_t h = 0;
-  pair<size_t, size_t> init;
+  size_t w = 0, h = 0;
+  vector<unordered_map<char, pair<size_t, size_t>>> km;
+  unordered_map<pair<char, char>, pair<keys, size_t>, hash_pair> key_dists;
+  vector<pair<size_t, size_t>> starts;
 
   while (!cin.eof())
   {
@@ -136,6 +217,30 @@ solve(int _)
     }
   }
 
+  if (_)
+  {
+    bool done = false;
+    for (size_t y = 0; y < h && !done; y++)
+    {
+      for (size_t x = 0; x < w && !done; x++)
+      {
+        if (v[y][x] == '@')
+        {
+          v[y - 1][x] = '#';
+          v[y + 1][x] = '#';
+          v[y][x - 1] = '#';
+          v[y][x + 1] = '#';
+          v[y][x]     = '#';
+          v[y - 1][x - 1] = '@';
+          v[y + 1][x - 1] = '@';
+          v[y - 1][x + 1] = '@';
+          v[y + 1][x + 1] = '@';
+          done = true;
+        }
+      }
+    }
+  }
+
   m.resize(w * h);
   for (size_t y = 0; y < h; y++)
   {
@@ -144,96 +249,128 @@ solve(int _)
       m[y * w + x] = v[y][x];
       if (v[y][x] == '@')
       {
-        init = make_pair(x, y);
-      }
-      else if (v[y][x] >= 'a' && v[y][x] <= 'z')
-      {
-        km[v[y][x]] = make_pair(x, y);
+        starts.push_back(make_pair(x, y));
       }
     }
   }
 
-  for (auto it : km)
+  km.resize(starts.size());
+  for (size_t i = 0; i < starts.size(); i++)
   {
-    key_dists[it.first] = bfs(m, w, h, km, it.second);
+    km[i] = keys_reachable(m, w, h, starts[i]);
+    unordered_map<char, pair<keys, size_t>> keydata = bfs(m, w, h, km[i], starts[i]);
+    for (auto it : keydata)
+    {
+      key_dists[make_pair('@', it.first)] = it.second;
+    }
+    for (auto it : km[i])
+    {
+      unordered_map<char, pair<keys, size_t>> keydata = bfs(m, w, h, km[i], it.second);
+      for (auto reach : keydata)
+      {
+        key_dists[make_pair(it.first, reach.first)] = reach.second;
+      }
+    }
   }
 
-  unordered_map<pair<keys, char>, bool, hash_pair> visited;
-  unordered_map<pair<keys, char>, size_t, hash_pair> dists;
-  auto cmp = [&d = dists](pair<keys, char> l, pair<keys, char> r) -> bool
+  unordered_map<pair<keys, string>, bool, hash_pair> visited;
+  unordered_map<pair<keys, string>, size_t, hash_pair> dists;
+  auto cmp = [&d = dists](pair<keys, string> l, pair<keys, string> r) -> bool
   {
     return d[l] > d[r];
   };
 
   // initially seed the priority queue
-  priority_queue<pair<keys, char>, vector<pair<keys, char>>, decltype(cmp)> pq(cmp);
-  unordered_map<char, pair<keys, size_t>> initial = bfs(m, w, h, km, init);
-  for (auto it : km)
-  {
-    char c = it.first;
-    if (initial[c].first.none())
-    {
-      pair<keys, char> k = make_pair(keys().set(to_keybit(c)), c);
-      dists[k] = initial[c].second;
-      pq.push(k);
+  priority_queue<pair<keys, string>, vector<pair<keys, string>>, decltype(cmp)> pq(cmp);
+  // vector<pair<keys, string>> pq;
+  unordered_map<pair<keys, string>, bool, hash_pair> pqi;
 
-      // cout << "(req: " << initial[c].first << ", final: " << c << ", dist: " << dists[k] << ")" << endl;
+  string initial;
+  for (size_t i = 0; i < starts.size(); i++)
+  {
+    initial += "@";
+  }
+  pq.push(make_pair(keys(), initial));
+  pqi[make_pair(keys(), initial)] = true;
+  // make_heap(pq.begin(), pq.end(), cmp);
+
+  keys end;
+  for (size_t i = 0; i < starts.size(); i++)
+  {
+    for (auto it : km[i])
+    {
+      end.set(to_keybit(it.first));
     }
   }
+  // cout << "end: " << end << endl;
 
+  size_t cnt = 0;
+  size_t min = -1;
   while (pq.size()) {
     keys ks;
-    char last;
-    pair<keys, char> kl = pq.top();
-    tie(ks, last) = kl;
+    string lasts;
+    pair<keys, string> kl;
+
+    // pop_heap(pq.begin(), pq.end(), cmp);
+    kl = pq.top();
+    tie(ks, lasts) = kl;
     pq.pop();
+    pqi[kl] = false;
 
     if (visited[kl]) continue;
     visited[kl] = true;
 
-    for (auto it : km)
+    if (ks == end)
     {
-      char c = it.first;
-      keys req, missing;
-      size_t ndist;
-      tie(req, ndist) = key_dists[last][c];
-      missing = req & ~ks;
+      if (dists[kl] < min) min = dists[kl];
+    }
 
-      if (missing.none())
+    if (cnt % 1000 == 0)
+    {
+      string s;
+      for (auto c : lasts) s += c;
+      // cout << "trying keyset " << ks << " at " << s << " (" << pq.size() << ")" << endl;
+    }
+    cnt++;
+
+    for (size_t i = 0; i < lasts.size(); i++)
+    {
+      // try to move the ith robot to a key reachable by it
+      for (auto it : km[i])
       {
-        keys nks = ks;
-        nks.set(to_keybit(c));
-        pair<keys, char> nk = make_pair(nks, c);
-        size_t new_total = dists[kl] + ndist;
+        char c = it.first;
+        keys req, missing;
+        size_t ndist;
+        tie(req, ndist) = key_dists[make_pair(lasts[i], c)];
+        missing = req & ~ks;
 
-        if (dists[nk] == 0)
+        if (missing.none())
         {
-          dists[nk] = new_total;
+          keys nks = ks;
+          string nlasts = lasts;
+          nks.set(to_keybit(c));
+          nlasts[i] = c;
+          pair<keys, string> nk = make_pair(nks, nlasts);
+          size_t new_total = dists[kl] + ndist;
+
+          if (dists[nk] == 0)
+          {
+            dists[nk] = new_total;
+          }
+          else
+          {
+            dists[nk] = dists[nk] <= new_total ? dists[nk] : new_total;
+          }
+          if (!pqi[nk])
+          {
+            pq.push(nk);
+            pqi[nk] = true;
+          }
+          // cout << last << " -> " << c << " (req, curdist, dist): ("
+          //      << req << ", " << dists[kl] << ", " << ndist << ")" << endl;
         }
-        else
-        {
-          dists[nk] = dists[nk] <= new_total ? dists[nk] : new_total;
-        }
-        pq.push(nk);
-        // cout << last << " -> " << c << " (req, curdist, dist): ("
-        //      << req << ", " << dists[kl] << ", " << ndist << ")" << endl;
       }
     }
-  }
-
-  keys end;
-  for (auto it : km)
-  {
-    end.set(to_keybit(it.first));
-  }
-
-  // cout << "end: " << end << endl;
-
-  size_t min = -1;
-  for (auto it : km)
-  {
-    size_t d = dists[make_pair(end, it.first)];
-    if (d < min) min = d;
   }
 
   cout << min << endl;
