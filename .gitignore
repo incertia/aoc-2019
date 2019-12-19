@@ -1,4 +1,5 @@
 .stack-work/
+.clangd/
 output/
 cbuild/
 debug/
