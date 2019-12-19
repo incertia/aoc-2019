@@ -181,6 +181,16 @@ solve(int _)
   vector<unordered_map<char, pair<size_t, size_t>>> km;
   unordered_map<pair<char, char>, pair<keys, size_t>, hash_pair> key_dists;
   vector<pair<size_t, size_t>> starts;
+  unordered_map<pair<keys, string>, bool, hash_pair> pqi;
+  string initial;
+  unordered_map<pair<keys, string>, bool, hash_pair> visited;
+  unordered_map<pair<keys, string>, size_t, hash_pair> dists;
+  auto cmp = [&d = dists](pair<keys, string> l, pair<keys, string> r) -> bool
+  {
+    return d[l] > d[r];
+  };
+  priority_queue<pair<keys, string>, vector<pair<keys, string>>, decltype(cmp)> pq(cmp);
+  keys end;
 
   while (!cin.eof())
   {
@@ -204,15 +214,11 @@ solve(int _)
       {
         if (v[y][x] == '@')
         {
-          v[y - 1][x] = '#';
-          v[y + 1][x] = '#';
-          v[y][x - 1] = '#';
-          v[y][x + 1] = '#';
+          v[y - 1][x] = '#'; v[y + 1][x] = '#';
+          v[y][x - 1] = '#'; v[y][x + 1] = '#';
           v[y][x]     = '#';
-          v[y - 1][x - 1] = '@';
-          v[y + 1][x - 1] = '@';
-          v[y - 1][x + 1] = '@';
-          v[y + 1][x + 1] = '@';
+          v[y - 1][x - 1] = '@'; v[y + 1][x - 1] = '@';
+          v[y - 1][x + 1] = '@'; v[y + 1][x + 1] = '@';
           done = true;
         }
       }
@@ -251,28 +257,13 @@ solve(int _)
     }
   }
 
-  unordered_map<pair<keys, string>, bool, hash_pair> visited;
-  unordered_map<pair<keys, string>, size_t, hash_pair> dists;
-  auto cmp = [&d = dists](pair<keys, string> l, pair<keys, string> r) -> bool
-  {
-    return d[l] > d[r];
-  };
-
-  // initially seed the priority queue
-  priority_queue<pair<keys, string>, vector<pair<keys, string>>, decltype(cmp)> pq(cmp);
-  // vector<pair<keys, string>> pq;
-  unordered_map<pair<keys, string>, bool, hash_pair> pqi;
-
-  string initial;
   for (size_t i = 0; i < starts.size(); i++)
   {
     initial += "@";
   }
   pq.push(make_pair(keys(), initial));
   pqi[make_pair(keys(), initial)] = true;
-  // make_heap(pq.begin(), pq.end(), cmp);
 
-  keys end;
   for (size_t i = 0; i < starts.size(); i++)
   {
     for (auto it : km[i])
@@ -280,36 +271,23 @@ solve(int _)
       end.set(to_keybit(it.first));
     }
   }
-  // cout << "end: " << end << endl;
 
-  size_t cnt = 0;
   size_t min = -1;
   while (pq.size()) {
     keys ks;
     string lasts;
     pair<keys, string> kl;
 
-    // pop_heap(pq.begin(), pq.end(), cmp);
     kl = pq.top();
     tie(ks, lasts) = kl;
-    pq.pop();
     pqi[kl] = false;
 
-    if (visited[kl]) continue;
     visited[kl] = true;
 
     if (ks == end)
     {
       if (dists[kl] < min) min = dists[kl];
     }
-
-    //if (cnt % 1000 == 0)
-    //{
-    //  string s;
-    //  for (auto c : lasts) s += c;
-    //  // cout << "trying keyset " << ks << " at " << s << " (" << pq.size() << ")" << endl;
-    //}
-    //cnt++;
 
     for (size_t i = 0; i < lasts.size(); i++)
     {
@@ -319,6 +297,13 @@ solve(int _)
         char c = it.first;
         keys req, missing;
         size_t ndist;
+
+        // a big optimization - do not try to retrieve keys already retrieved
+        if (ks.test(to_keybit(c)))
+        {
+          continue;
+        }
+
         tie(req, ndist) = key_dists[make_pair(lasts[i], c)];
         missing = req & ~ks;
 
@@ -326,6 +311,7 @@ solve(int _)
         {
           keys nks = ks;
           string nlasts = lasts;
+
           nks.set(to_keybit(c));
           nlasts[i] = c;
           pair<keys, string> nk = make_pair(nks, nlasts);
@@ -339,16 +325,18 @@ solve(int _)
           {
             dists[nk] = dists[nk] <= new_total ? dists[nk] : new_total;
           }
-          if (!pqi[nk])
+
+          // only re-add non-visited and non-queued keys
+          if (!visited[nk] && !pqi[nk])
           {
             pq.push(nk);
             pqi[nk] = true;
           }
-          // cout << last << " -> " << c << " (req, curdist, dist): ("
-          //      << req << ", " << dists[kl] << ", " << ndist << ")" << endl;
         }
       }
     }
+
+    pq.pop();
   }
 
   cout << min << endl;
