@@ -1,4 +1,4 @@
-set (cprobs 001 002 003 004 005 006 009 011 012 013 015 016)
+set (cprobs 001 002 003 004 005 006 009 011 012 013 015 016 022)
 set (cxxprobs 018 020)
 
 add_library (aoc STATIC main.c aoc.c intcode.c)
@@ -18,7 +18,8 @@ function (addprobs v ext std)
     target_compile_options (${prob} PRIVATE $<$<CONFIG:RELEASE>:-O2>)
     target_compile_options (${prob} PRIVATE $<$<CONFIG:DEBUG>:-Werror
       -fsanitize=address>)
-    target_link_options (${prob} PRIVATE $<$<CONFIG:DEBUG>:-fsanitize=address>)
+    target_link_options (${prob} PRIVATE $<$<CONFIG:DEBUG>:-fsanitize=address>
+      -lgmp)
   endforeach (prob)
 endfunction(addprobs)
 
