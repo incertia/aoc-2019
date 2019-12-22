@@ -83,6 +83,7 @@ solve(int _)
   mpz_sub_ui(tmp2, tmp2, 1);    // tmp2 = inc^times - 1
   mpz_mul(pos, pos, tmp1);
   mpz_mul(pos, pos, tmp2);      // pos = pos * (inc^times - 1) / (inc - 1)
+  mpz_mod(pos, pos, n);
   if (!_)
   {
     mpz_sub(tmp1, target, pos);
