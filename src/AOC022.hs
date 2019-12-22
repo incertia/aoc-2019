@@ -3,7 +3,6 @@ module AOC022
   ) where
 
 import Data.Foldable (foldl')
-import GHC.Natural (Natural)
 import Math.NumberTheory.Moduli (SomeMod(..), modulo, getVal)
 
 data Shuffle = Cut  SomeMod
