@@ -194,7 +194,7 @@ solve(int _)
     c %= N;
     if (c == 0)
     {
-      if (idle == N && nat_activated)
+      if (_ && idle == N && nat_activated)
       {
         if (naty == lasty)
         {
