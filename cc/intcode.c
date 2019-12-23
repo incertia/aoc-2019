@@ -72,6 +72,7 @@ vec_append(vec_t *v, int64_t d)
   if (v->sz == v->cap)
   {
     v->cap *= 2;
+    if (v->cap == 0) v->cap = 1024;
     v->v = realloc(v->v, v->cap * sizeof(int64_t));
   }
   v->v[v->sz++] = d;
